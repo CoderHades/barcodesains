@@ -81,53 +81,23 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script src="https://cdn.rawgit.com/serratus/quaggaJS/0.12.1/dist/quagga.min.js"></script>
+    <script src="https://rawgit.com/zxing-js/library/master/dist/zxing.js"></script>
 
     <script>
-        $(document).ready(function() {
-            // Initialize QuaggaJS
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.querySelector("#scanner-video"),
-                    constraints: {
-                        width: 480,
-                        height: 320,
-                        facingMode: "environment",
-                    },
-                },
-                decoder: {
-                    readers: ["ean_reader", "upc_reader"],
-                },
-            });
+        $(document).ready(function () {
+            const video = document.getElementById('scanner-video');
 
-            Quagga.onProcessed(function(result) {
-                const drawingCtx = Quagga.canvas.ctx.overlay,
-                    drawingCanvas = Quagga.canvas.dom.overlay;
+            // Initialize the ZXing code reader
+            const codeReader = new ZXing.BrowserBarcodeReader();
 
-                if (result) {
-                    if (result.boxes) {
-                        drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
-                        result.boxes.filter(box => box !== result.box).forEach(function (box) {
-                            Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
-                        });
-                    }
-
-                    if (result.box) {
-                        Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
-                    }
-
-                    if (result.codeResult && result.codeResult.code) {
-                        $('#scanned-barcode').text(result.codeResult.code);
-                        Quagga.stop();
-                        validateBarcode(result.codeResult.code);
-                    }
-                }
-            });
-
-            // Start QuaggaJS
-            Quagga.start();
+            // Start the video stream from the camera
+            codeReader
+                .decodeFromInputVideoDevice(undefined, 'scanner-video')
+                .then(result => {
+                    $('#scanned-barcode').text(result.text);
+                    validateBarcode(result.text);
+                })
+                .catch(err => console.error(err));
 
             // Function to validate barcode through HTTP request
             function validateBarcode(barcode) {
@@ -136,11 +106,11 @@
                     url: 'https://example.com/validateBarcode',
                     method: 'POST',
                     data: { barcode: barcode },
-                    success: function(response) {
+                    success: function (response) {
                         // Handle successful validation
                         showValidationStatus('Barcode Validated', true);
                     },
-                    error: function() {
+                    error: function () {
                         // Handle validation failure
                         showValidationStatus('Validation Failed', false);
                     }
