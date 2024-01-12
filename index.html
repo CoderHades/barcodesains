@@ -81,12 +81,12 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script src="https://rawgit.com/zxing-js/library/master/dist/zxing.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/zxing-js/library@0.22.0/dist/zxing.min.js"></script>
 
     <script>
         $(document).ready(function () {
             const video = document.getElementById('scanner-video');
-
+            
             // Initialize the ZXing code reader
             const codeReader = new ZXing.BrowserBarcodeReader();
 
