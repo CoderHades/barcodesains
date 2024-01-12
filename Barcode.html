@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background: #333333;
+            color: #FFFFFF;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .content {
+            background: #484848;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .barcode-scanner {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .scanned-barcode {
+            background: #FFFFFF;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .validation-status {
+            text-align: center;
+            margin-top: 10px;
+            color: #FFFFFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Barcode Scanner App</h1>
+    </div>
+
+    <div class="content">
+        <div class="barcode-scanner">
+            <video id="scanner-video" playsinline autoplay muted></video>
+            <div class="scanned-barcode" id="scanned-barcode">
+                <!-- Scanned barcode will be displayed here -->
+            </div>
+        </div>
+
+        <div class="validation-status" id="validation-status">
+            <!-- Validation status will be displayed here -->
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.rawgit.com/serratus/quaggaJS/0.12.1/dist/quagga.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize QuaggaJS
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector("#scanner-video"),
+                    constraints: {
+                        width: 480,
+                        height: 320,
+                        facingMode: "environment",
+                    },
+                },
+                decoder: {
+                    readers: ["ean_reader", "upc_reader"],
+                },
+            });
+
+            Quagga.onDetected(function(result) {
+                const barcode = result.codeResult.code;
+                // Display scanned barcode
+                $('#scanned-barcode').text(barcode);
+
+                // Generate ten new barcodes
+                const newBarcodes = generateNewBarcodes(barcode);
+
+                // Initiate HTTP requests for validation
+                newBarcodes.forEach(function(newBarcode) {
+                    validateBarcode(newBarcode);
+                });
+
+                // Stop QuaggaJS after successful scan
+                Quagga.stop();
+            });
+
+            // Start QuaggaJS
+            Quagga.start();
+
+            // Function to generate ten new barcodes
+            function generateNewBarcodes(originalBarcode) {
+                const newBarcodes = [];
+                for (let i = 1; i <= 10; i++) {
+                    newBarcodes.push(originalBarcode + i);
+                }
+                return newBarcodes;
+            }
+
+            // Function to validate barcode through HTTP request
+            function validateBarcode(barcode) {
+                // Example: Use jQuery AJAX for simplicity
+                $.ajax({
+                    url: 'https://example.com/validateBarcode',
+                    method: 'POST',
+                    data: { barcode: barcode },
+                    success: function(response) {
+                        // Handle successful validation
+                        showValidationStatus('Barcode Validated', true);
+                    },
+                    error: function() {
+                        // Handle validation failure
+                        showValidationStatus('Validation Failed', false);
+                    }
+                });
+            }
+
+            // Function to display validation status
+            function showValidationStatus(message, success) {
+                const statusElement = $('#validation-status');
+                statusElement.text(message).css('color', success ? '#00FF00' : '#FF0000');
+            }
+        });
+    </script>
+</body>
+</html>
