@@ -9,6 +9,7 @@
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
+            background-color: #f4f4f4;
         }
 
         .header {
@@ -16,12 +17,17 @@
             color: #FFFFFF;
             padding: 15px;
             text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .content {
-            background: #484848;
+            background: #FFFFFF;
             padding: 20px;
             text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 400px;
         }
 
         .barcode-scanner {
@@ -31,7 +37,7 @@
             margin: 0 auto;
             overflow: hidden;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         video {
@@ -42,7 +48,8 @@
         }
 
         .scanned-barcode {
-            background: #FFFFFF;
+            background: #9C0013;
+            color: #FFFFFF;
             padding: 15px;
             margin-top: 20px;
             border-radius: 5px;
@@ -95,34 +102,32 @@
                 },
             });
 
-            Quagga.onDetected(function(result) {
-                const barcode = result.codeResult.code;
-                // Display scanned barcode
-                $('#scanned-barcode').text(barcode);
+            Quagga.onProcessed(function(result) {
+                const drawingCtx = Quagga.canvas.ctx.overlay,
+                    drawingCanvas = Quagga.canvas.dom.overlay;
 
-                // Generate ten new barcodes
-                const newBarcodes = generateNewBarcodes(barcode);
+                if (result) {
+                    if (result.boxes) {
+                        drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                        result.boxes.filter(box => box !== result.box).forEach(function (box) {
+                            Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                        });
+                    }
 
-                // Initiate HTTP requests for validation
-                newBarcodes.forEach(function(newBarcode) {
-                    validateBarcode(newBarcode);
-                });
+                    if (result.box) {
+                        Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
+                    }
 
-                // Stop QuaggaJS after successful scan
-                Quagga.stop();
+                    if (result.codeResult && result.codeResult.code) {
+                        $('#scanned-barcode').text(result.codeResult.code);
+                        Quagga.stop();
+                        validateBarcode(result.codeResult.code);
+                    }
+                }
             });
 
             // Start QuaggaJS
             Quagga.start();
-
-            // Function to generate ten new barcodes
-            function generateNewBarcodes(originalBarcode) {
-                const newBarcodes = [];
-                for (let i = 1; i <= 10; i++) {
-                    newBarcodes.push(originalBarcode + i);
-                }
-                return newBarcodes;
-            }
 
             // Function to validate barcode through HTTP request
             function validateBarcode(barcode) {
